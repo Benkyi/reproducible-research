@@ -101,7 +101,7 @@ project
 
 ### Type-along exercise
 
-1. Clone this sample repository [insert repo url]
+#### 1. Clone this sample repository [insert repo url]
  - Sumatra needs to interact with a version control system (Git, Subversion, Mercurial, Bazaar).
  - Files in repository:
 
@@ -128,7 +128,7 @@ project
     </tr>
     </table>
 
-2. Initialize Sumatra repository:  
+#### 2. Initialize Sumatra repository:  
    ```
    $ smt init my-project
    ```
@@ -141,7 +141,7 @@ project
    and the record store. The record store `records.db`, containing a database with information on calculations, 
    is by default a SQLite database (if django is installed).
 
-   #### Optional configuration steps
+   **Optional configuration steps**   
    To store paths to input or output relative to the working directory or some other directory
    (useful if running computations for the same project on multiple computers,
    or if one needs to relocate the project directory), one can specify this as follows:
@@ -181,7 +181,7 @@ project
    $ smt configure --mirror https://dl.dropboxusercontent.com/u/xyzxyz/
    ```
 
-3. Run calculations
+#### 3. Run calculations
 
    Running a mock simulation with the given Python scripts would normally be done by 
    ```
@@ -241,8 +241,81 @@ project
    $ smt tag analysis 20171201-145353
    $ smt tag foobar # this tags the latest run
    ```
+   Many tags can be added to each simulation, and they can also be removed:
+   ```
+   $ smt tag --remove foobar 
+   ```
+
+   We will now run the `simulate_with_parameters.py` instead, which reads the input parameter to the 
+   "simulation" from a parameter file. Sumatra understands input parameter files in 
+   [various file formats](http://sumatra.readthedocs.io/en/0.7.4/parameter_files.html), including files using 
+   a simple `param1 = value1` syntax (which is the format used in `param.dat`), and will store values of input 
+   parameters.  
+   Before running the simulation again, let's configure Sumatra to by default use Python as executable and 
+   `simulate_with_parameters.py` as main file:
+   ```
+   $ smt configure --executable=python --main=simulate_with_parameters.py
+   ```
+   We can always get information on what the default executable and main file (along with other useful information) 
+   using `smt info`:
+   ```
+   $ smt info
+   
+   Project name        : my-project
+   Default executable  : Python (version: 2.7.14) at /Users/ktw/anaconda2/envs/sumatra/bin/python
+   Default repository  : GitRepository at /Users/ktw/coderefinery/material/reproducible-research_material/my-project
+   Default main file   : simulate_with_parameters.py
+   Default launch mode : serial
+   Data store (output) : /Users/ktw/coderefinery/material/reproducible-research_material/my-project/Data
+   .          (input)  : /
+   Record store        : Record store using the shelve package (database file=/Users/ktw/coderefinery/material/reproducible-research_material/my-project/.smt/records)
+   Code change policy  : error
+   Append label to     : None
+   Label generator     : timestamp
+   Timestamp format    : %Y%m%d-%H%M%S
+   Plug-ins            : []
+   Sumatra version     : 0.7.4
+   ```	   
+
+   Running a simulation now takes less typing:
+   ```
+   $ smt run param.dat
+
+   Record label for this run: '20171204-104641'
+   Data keys are [simulation_output.pkl(6f45a76f08f3b7fc1b00f4a148774908fbe8aa64 [2017-12-04 10:46:47])]
+   ```
+
+   A `smt list --long` will now include a line with the parameter values for this simulation:   
+   ```
+   Label            : 20171204-104641
+   ...
+   Parameters       : n = 10000`
+   ...
+   ```
+
+   We can also override the parameters in the given parameter file on the command line. Let's do 
+   this, and also add a `reason` for our test:
+   ```
+   $ smt run --reason="test effect of larger sampling size" param.dat n=50000
+   ```
+   The `Reason` field for this simulation will now contain the text we provided.
 
 
+   Unlike Git commit hashes, there is nothing special about the labels of simulations in Sumatra, and we can rename 
+   them to anything we want:
+   ```
+   $ smt run --label=small-sample --reason="what happens if n is very low?" param.dat n=50
+   ```
+
+   We can now investigate what effect the smaller sample size has on the output data by running the 
+   analysis script, and based on our observations annotate the simulation:
+   ```
+   $ smt run --main=analysis.py Data/simulation_output.pkl
+   
+   $ smt comment small-sample "apparently, the mean of the distribution deviates more from zero"
+   ```
+
+   
 
 
 <!-- 
